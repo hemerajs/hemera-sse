@@ -1,5 +1,4 @@
 # hemera-sse
-[![npm](https://img.shields.io/npm/v/hapi-hemera.svg?maxAge=3600)](https://www.npmjs.com/package/hapi-hemera)
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg)](http://standardjs.com)
 
 Stream Updates with HTTP/2 Server-Sent Events & Hemera
@@ -12,3 +11,11 @@ Stream Updates with HTTP/2 Server-Sent Events & Hemera
 ```
 npm start
 ```
+
+## TODO
+
+- [X] Setup frontend
+- [X] Setup backend
+- [X] Try SSE with HTTP/1
+- [ ] UseHTTP/2
+- [ ] Use Hemera
