@@ -1,0 +1,32 @@
+{
+  "private": true,
+  "name": "hemera-sse-frontend",
+  "description": "Stream Updates with HTTP/2 Server-Sent Events & Hemera",
+  "version": "1.0.0",
+  "repository": "git://github.com/hemerajs/hemera-sse",
+  "author": "Dustin Deus (https://github.com/StarpTech)",
+  "browserslist": [
+    "last 2 versions"
+  ],
+  "scripts": {
+    "start": "parcel src/index.html",
+    "start:browser": "npm start -- --open",
+    "build": "rimraf dist && parcel build src/index.html"
+  },
+  "engines": {
+    "node": ">=8.9.0"
+  },
+  "dependencies": {
+    "rimraf": "^2.6.2",
+    "vue": "^2.5.16",
+    "vue-hot-reload-api": "^2.3.0",
+    "vue-property-decorator": "^6.0.0"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@vue/component-compiler-utils": "^1.0.0",
+    "parcel-bundler": "^1.7.0",
+    "typescript": "^2.8.1",
+    "vue-template-compiler": "^2.5.16"
+  }
+}
