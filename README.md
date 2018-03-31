@@ -14,7 +14,7 @@ npm start
 
 ## Goals
 
-* Subscribe to volatile Hemera events
+* Subscribe to Hemera events
 * Subscribe to durable message queue via Hemera/[NATS-Streaming](https://github.com/hemerajs/hemera-nats-streaming) and resume at specific message sequence number
 * Stream JSON
 
