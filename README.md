@@ -17,5 +17,5 @@ npm start
 - [X] Setup frontend
 - [X] Setup backend
 - [X] Try SSE with HTTP/1
-- [ ] UseHTTP/2
+- [ ] Use HTTP/2
 - [ ] Use Hemera
