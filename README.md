@@ -14,8 +14,9 @@ npm start
 
 ## Goals
 
-* Subscribe to Hemera events
-* Subscribe to durable message queue via Hemera/[NATS-Streaming](https://github.com/hemerajs/hemera-nats-streaming) and resume at specific message sequence number
+* Subscribe to Hemera events and **[Named events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events)** in the frontend
+* Subscribe to durable message queue via Hemera/[NATS-Streaming](https://github.com/hemerajs/hemera-nats-streaming)
+* Reply message at special HTTP header (Last-Event-ID) in NATS-Streaming
 * Use HTTP2 to be more efficient multiplexing, header-compression ...
 * Stream JSON
 
