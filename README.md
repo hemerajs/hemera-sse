@@ -1,5 +1,5 @@
 # hemera-sse
-[![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg)](http://standardjs.com)
+[![styled with prettier](https://img.shields.io/badge/styled_with-prettier-ff69b4.svg)](#badge)
 
 Stream Updates with HTTP/2 Server-Sent Events & Hemera
 
