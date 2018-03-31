@@ -16,6 +16,7 @@ npm start
 
 * Subscribe to Hemera events
 * Subscribe to durable message queue via Hemera/[NATS-Streaming](https://github.com/hemerajs/hemera-nats-streaming) and resume at specific message sequence number
+* Use HTTP2 to be more efficient multiplexing, header-compression ...
 * Stream JSON
 
 ## TODO
