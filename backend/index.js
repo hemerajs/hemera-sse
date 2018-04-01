@@ -19,7 +19,7 @@ fastify.route({
 
     const data = { name: 'test' }
 
-    const transformStream = reply.constructSSEStream()
+    const transformStream = reply.createSSEStream()
     reply.sse(transformStream)
 
     reply.sendSSE(transformStream, {
@@ -50,7 +50,7 @@ function serialize(opts) {
   })
 }
 
-fastify.decorateReply('constructSSEStream', function(opts) {
+fastify.decorateReply('createSSEStream', function(opts) {
   return serialize(opts)
 })
 
