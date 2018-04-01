@@ -8,6 +8,8 @@ Stream Updates with HTTP/2 Server-Sent Events & Hemera
 
 ## Getting started
 
+[Download](http://nats.io/download/nats-io/nats-streaming-server/) and start nats-streaming-server
+
 ```
 npm start
 ```
