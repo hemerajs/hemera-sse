@@ -20,7 +20,7 @@ export default class Collector extends Vue {
     let es = new EventSource('http://localhost:3000/events')
 
     es.addEventListener(
-      'ping',
+      'topic:add',
       event => {
         const msg = JSON.parse(event.data)
         this.events.push(msg)

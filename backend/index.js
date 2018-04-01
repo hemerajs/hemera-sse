@@ -1,9 +1,10 @@
 'use strict'
 
-const fastify = require('fastify')({ logger: { level: 'info' } })
+const fastify = require('fastify')({ logger: { level: 'debug' } })
 const through = require('through2')
 const stringify = require('json-stringify-safe')
 const EOL = require('os').EOL
+const NUID = require('nuid')
 
 fastify.register(require('fastify-hemera'), {
   hemera: {
@@ -17,6 +18,11 @@ fastify.route({
   handler: (req, reply) => {
     reply.header('Access-Control-Allow-Origin', '*')
 
+    const lastEventId = req.getLastEventId()
+    if (lastEventId) {
+      req.log.info(req.getLastEventId(), 'Last event id')
+    }
+
     const data = { name: 'test' }
 
     const transformStream = reply.createSSEStream()
@@ -24,17 +30,9 @@ fastify.route({
 
     reply.sendSSE(transformStream, {
       data,
-      id: generateId(),
-      event: 'ping'
+      id: NUID.next(),
+      event: 'topic:add'
     })
-
-    setInterval(() => {
-      reply.sendSSE(transformStream, {
-        data,
-        id: generateId(),
-        event: 'ping'
-      })
-    }, 1000)
   }
 })
 
@@ -64,21 +62,34 @@ fastify.decorateReply('createSSEStream', function(opts) {
 })
 
 fastify.decorateReply('sendSSE', function(stream, msg) {
+  // the id of the message
   if (msg.id) {
     stream.write('id: ' + msg.id)
   }
+  // Assign the next payload to a specific event
   if (msg.event) {
     stream.write('event: ' + msg.event)
   }
+  // Tell the clients how long they should wait before reconnecting.
   if (msg.retryTimeout) {
     stream.write('retry: ' + msg.retryTimeout)
   }
+  // message payload must be an object
   if (msg.data) {
     stream.write(msg.data)
+  }
+  // Send a "ping" (empty comment) to all clients, to keep the connections alive
+  if (msg.ping) {
+    stream.write(':')
   }
 })
 
 fastify.decorateReply('sse', function(stream) {
+  // keep client connection open
+  this.request.req.socket.setTimeout(0)
+  this.request.req.socket.setNoDelay(true)
+  this.request.req.socket.setKeepAlive(true)
+
   this.code(200)
     .type('text/event-stream;charset=UTF-8')
     .header('content-encoding', 'identity')
@@ -86,10 +97,6 @@ fastify.decorateReply('sse', function(stream) {
     .header('Connection', 'keep-alive')
     .send(stream)
 })
-
-function generateId() {
-  return new Date().toLocaleTimeString()
-}
 
 async function start() {
   await fastify.listen(3000)
