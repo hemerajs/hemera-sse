@@ -4,9 +4,19 @@ const fastify = require('fastify')({ logger: { level: 'debug' } })
 const through = require('through2')
 const stringify = require('json-stringify-safe')
 const EOL = require('os').EOL
-const NUID = require('nuid')
 
 fastify.register(require('fastify-hemera'), {
+  plugins: [
+    require('hemera-joi'),
+    {
+      plugin: require('hemera-nats-streaming'),
+      options: {
+        clusterId: 'test-cluster',
+        clientId: 'clientTest',
+        opts: {}
+      }
+    }
+  ],
   hemera: {
     logLevel: 'error'
   }
@@ -14,25 +24,52 @@ fastify.register(require('fastify-hemera'), {
 
 fastify.route({
   method: 'GET',
-  url: '/events',
+  url: '/events/subscribe/:subject',
+  schema: {
+    params: {
+      pattern: { type: 'string' }
+    }
+  },
   handler: (req, reply) => {
     reply.header('Access-Control-Allow-Origin', '*')
 
-    const lastEventId = req.getLastEventId()
+    const lastEventId = parseInt(req.getLastEventId())
     if (lastEventId) {
       req.log.info(req.getLastEventId(), 'Last event id')
     }
 
-    const data = { name: 'test' }
-
     const transformStream = reply.createSSEStream()
     reply.sse(transformStream)
 
-    reply.sendSSE(transformStream, {
-      data,
-      id: NUID.next(),
-      event: 'topic:add'
-    })
+    req.hemera.act(
+      {
+        topic: 'nats-streaming',
+        cmd: 'subscribe',
+        subject: req.params.subject,
+        options: {
+          setStartAtSequence: lastEventId
+        }
+      },
+      (err, resp) => {
+        if (err) {
+          req.log.error(err)
+        } else {
+          req.hemera.add(
+            {
+              topic: `nats-streaming.${req.params.subject}`
+            },
+            (hemeraReq, cb) => {
+              reply.sendSSE(transformStream, {
+                data: hemeraReq.data.message,
+                id: hemeraReq.data.sequence,
+                event: req.params.subject
+              })
+              cb()
+            }
+          )
+        }
+      }
+    )
   }
 })
 
@@ -100,6 +137,16 @@ fastify.decorateReply('sse', function(stream) {
 
 async function start() {
   await fastify.listen(3000)
+  setInterval(() => {
+    fastify.hemera.act({
+      topic: 'nats-streaming',
+      cmd: 'publish',
+      subject: 'news',
+      data: {
+        title: 'hello world'
+      }
+    })
+  }, 2000)
 }
 
 start()

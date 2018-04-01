@@ -2,7 +2,7 @@
     <div>
       <ul id="example-1">
         <li v-for="event in events">
-          {{ event.name }}
+          {{ event.title }}
         </li>
       </ul>
     </div>
@@ -17,10 +17,10 @@ export default class Collector extends Vue {
   events: Array<object> = []
   setupStream() {
     // Not a real URL, just using for demo purposes
-    let es = new EventSource('http://localhost:3000/events')
+    let es = new EventSource('http://localhost:3000/events/subscribe/news')
 
     es.addEventListener(
-      'topic:add',
+      'news',
       event => {
         const msg = JSON.parse(event.data)
         this.events.push(msg)
