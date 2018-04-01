@@ -22,14 +22,14 @@ fastify.route({
     const transformStream = reply.constructSSEStream()
     reply.sse(transformStream)
 
-    reply.constructSSE(transformStream, {
+    reply.sendSSE(transformStream, {
       data,
       id: generateId(),
       event: 'ping'
     })
 
     setInterval(() => {
-      reply.constructSSE(transformStream, {
+      reply.sendSSE(transformStream, {
         data,
         id: generateId(),
         event: 'ping'
@@ -40,9 +40,11 @@ fastify.route({
 
 function serialize(opts) {
   return through.obj(opts, function(obj, enc, cb) {
+    // data only
     if (typeof obj === 'object') {
       cb(null, 'data: ' + stringify(obj) + EOL + EOL)
     } else {
+      // SSE instructions
       cb(null, obj + EOL)
     }
   })
@@ -52,7 +54,7 @@ fastify.decorateReply('constructSSEStream', function(opts) {
   return serialize(opts)
 })
 
-fastify.decorateReply('constructSSE', function(stream, { id, event, data }) {
+fastify.decorateReply('sendSSE', function(stream, { id, event, data }) {
   if (id) {
     stream.write('id: ' + id)
   }
