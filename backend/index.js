@@ -46,6 +46,7 @@ fastify.route({
         topic: 'nats-streaming',
         cmd: 'subscribe',
         subject: req.params.subject,
+        queue: 'sse',
         options: {
           setStartAtSequence: lastEventId
         }
