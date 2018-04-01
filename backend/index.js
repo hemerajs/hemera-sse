@@ -1,7 +1,9 @@
 'use strict'
 
 const fastify = require('fastify')({ logger: { level: 'info' } })
-const { Readable } = require('stream')
+const through = require('through2')
+const stringify = require('json-stringify-safe')
+const EOL = require('os').EOL
 
 fastify.register(require('fastify-hemera'), {
   hemera: {
@@ -15,16 +17,50 @@ fastify.route({
   handler: (req, reply) => {
     reply.header('Access-Control-Allow-Origin', '*')
 
-    const s = new Readable()
-    // we push data from outside
-    s._read = function noop() {}
+    const data = { name: 'test' }
 
-    reply.sse(s)
-    reply.constructSSE(s, generateId(), 'hello world')
+    const transformStream = reply.constructSSEStream()
+    reply.sse(transformStream)
+
+    reply.constructSSE(transformStream, {
+      data,
+      id: generateId(),
+      event: 'ping'
+    })
 
     setInterval(() => {
-      reply.constructSSE(s, generateId(), 'hello world')
+      reply.constructSSE(transformStream, {
+        data,
+        id: generateId(),
+        event: 'ping'
+      })
     }, 1000)
+  }
+})
+
+function serialize(opts) {
+  return through.obj(opts, function(obj, enc, cb) {
+    if (typeof obj === 'object') {
+      cb(null, 'data: ' + stringify(obj) + EOL + EOL)
+    } else {
+      cb(null, obj + EOL)
+    }
+  })
+}
+
+fastify.decorateReply('constructSSEStream', function(opts) {
+  return serialize(opts)
+})
+
+fastify.decorateReply('constructSSE', function(stream, { id, event, data }) {
+  if (id) {
+    stream.write('id: ' + id)
+  }
+  if (event) {
+    stream.write('event: ' + event)
+  }
+  if (data) {
+    stream.write(data)
   }
 })
 
@@ -35,15 +71,6 @@ fastify.decorateReply('sse', function(stream) {
     .header('Cache-Control', 'no-cache')
     .header('Connection', 'keep-alive')
     .send(stream)
-})
-
-fastify.decorateReply('sseEnd', function(stream) {
-  stream.push(null)
-})
-
-fastify.decorateReply('constructSSE', function(stream, id, data) {
-  stream.push('id: ' + id + '\n')
-  stream.push('data: ' + data + '\n\n')
 })
 
 function generateId() {

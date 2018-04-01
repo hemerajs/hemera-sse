@@ -14,16 +14,9 @@
     "node": ">=8.9.0"
   },
   "devDependencies": {
-    "eslint": "^4.19.1",
-    "eslint-config-hemera": "^0.0.4",
-    "npm-run-all": "^4.1.2",
-    "prettier": "^1.11.1"
+    "npm-run-all": "^4.1.2"
   },
   "scripts": {
-    "test": "mocha --exit -t 5000 --recursive",
-    "coverage": "istanbul cover node_modules/mocha/bin/_mocha -- -R spec -t 5000 --recursive",
-    "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report text-lcov -- -R spec | node ./node_modules/coveralls/bin/coveralls.js",
-    "lint": "eslint ./**/*.js",
     "start:frontend": "cd frontend && npm run start:browser",
     "start:backend": "cd backend && npm start",
     "start": "run-p start:*"

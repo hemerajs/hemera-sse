@@ -2,7 +2,7 @@
     <div>
       <ul id="example-1">
         <li v-for="event in events">
-          {{ event }}
+          {{ event.name }}
         </li>
       </ul>
     </div>
@@ -12,29 +12,39 @@
 import Vue from 'vue'
 import Component from 'vue-class-component'
 
-@Component()
+@Component({})
 export default class Collector extends Vue {
-  events: Array = []
+  events: Array<object> = []
   setupStream() {
-      // Not a real URL, just using for demo purposes
-      let es = new EventSource('http://localhost:3000/events')
+    // Not a real URL, just using for demo purposes
+    let es = new EventSource('http://localhost:3000/events')
 
-      es.addEventListener('message', event => {
-          this.events.push(event.data)
-      }, false)
+    es.addEventListener(
+      'ping',
+      event => {
+        const msg = JSON.parse(event.data)
+        this.events.push(msg)
+      },
+      false
+    )
 
-      es.addEventListener('error', event => {
-          if (event.readyState == EventSource.CLOSED) {
-              console.log('Event was closed')
-              console.log(EventSource)
-          }
-      }, false)
+    es.addEventListener(
+      'error',
+      event => {
+        if (event.readyState == EventSource.CLOSED) {
+          console.log('Event was closed')
+          console.log(EventSource)
+        }
+      },
+      false
+    )
   }
   created() {
-      this.setupStream()
+    this.setupStream()
   }
 }
 </script>
 
 <style>
+
 </style>
