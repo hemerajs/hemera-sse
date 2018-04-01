@@ -50,25 +50,37 @@ function serialize(opts) {
   })
 }
 
+fastify.decorateRequest('getLastEventId', function(opts) {
+  return (
+    this.headers['last-event-id'] ||
+    this.query.evs_last_event_id ||
+    this.query.lastEventId ||
+    0
+  )
+})
+
 fastify.decorateReply('createSSEStream', function(opts) {
   return serialize(opts)
 })
 
-fastify.decorateReply('sendSSE', function(stream, { id, event, data }) {
-  if (id) {
-    stream.write('id: ' + id)
+fastify.decorateReply('sendSSE', function(stream, msg) {
+  if (msg.id) {
+    stream.write('id: ' + msg.id)
   }
-  if (event) {
-    stream.write('event: ' + event)
+  if (msg.event) {
+    stream.write('event: ' + msg.event)
   }
-  if (data) {
-    stream.write(data)
+  if (msg.retryTimeout) {
+    stream.write('retry: ' + msg.retryTimeout)
+  }
+  if (msg.data) {
+    stream.write(msg.data)
   }
 })
 
 fastify.decorateReply('sse', function(stream) {
   this.code(200)
-    .type('text/event-stream')
+    .type('text/event-stream;charset=UTF-8')
     .header('content-encoding', 'identity')
     .header('Cache-Control', 'no-cache')
     .header('Connection', 'keep-alive')
