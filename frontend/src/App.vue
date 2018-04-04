@@ -10,9 +10,6 @@ import Vue from 'vue'
 import CollectorComponent from './components/Collector.vue'
 
 export default Vue.extend({
-  data() {
-    return { name: "World" }
-  },
   components: {
     CollectorComponent
   }
