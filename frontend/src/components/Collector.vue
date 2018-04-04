@@ -17,7 +17,7 @@ export default class Collector extends Vue {
   events: Array<object> = []
   setupStream() {
     // Not a real URL, just using for demo purposes
-    let es = new EventSource('http://localhost:3000/events/subscribe/news')
+    let es = new EventSource('http://localhost:3000/events/news')
 
     es.addEventListener(
       'news',

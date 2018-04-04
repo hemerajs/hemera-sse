@@ -1,22 +1,14 @@
 'use strict'
 
+// https://technology.amis.nl/2017/02/19/node-js-application-using-sse-server-sent-events-to-push-updates-read-from-kafka-topic-to-simple-html-client-application/
+
 const fastify = require('fastify')({ logger: { level: 'debug' } })
 const through = require('through2')
 const stringify = require('json-stringify-safe')
 const EOL = require('os').EOL
+const connections = new Set()
 
-const clientId = 'clientTest'
 fastify.register(require('fastify-hemera'), {
-  plugins: [
-    {
-      plugin: require('hemera-nats-streaming'),
-      options: {
-        clusterId: 'test-cluster',
-        clientId,
-        opts: {}
-      }
-    }
-  ],
   hemera: {
     logLevel: 'error'
   }
@@ -24,42 +16,37 @@ fastify.register(require('fastify-hemera'), {
 
 fastify.route({
   method: 'GET',
-  url: '/events/subscribe/:subject',
+  url: '/events/news',
   schema: {
     params: {
       pattern: { type: 'string' }
     }
   },
-  handler: async (req, reply) => {
+  beforeHandler: function(request, reply, done) {
+    reply
+      .code(200)
+      .type('text/event-stream;charset=UTF-8')
+      .header('Access-Control-Allow-Origin', '*')
+      .header('Cache-Control', 'no-cache')
+      .header('Connection', 'keep-alive')
+    // Add connections
+    connections.add(reply.res)
+    done()
+  },
+  handler: (req, reply) => {
     const lastEventId = parseInt(req.getLastEventId())
     if (lastEventId) {
       req.log.info(req.getLastEventId(), 'Last event id')
     }
 
     const transformStream = reply.createSSEStream()
-    reply.sse(transformStream)
+    reply.send(transformStream)
 
-    await req.hemera.act({
-      topic: 'natss',
-      cmd: 'subscribe',
-      subject: req.params.subject,
-      options: {
-        startAtSequence: lastEventId
-      }
+    reply.sendSSE(transformStream, {
+      data: { title: 'New news' },
+      id: '1',
+      event: 'news'
     })
-
-    req.hemera.add(
-      {
-        topic: `natss.${req.params.subject}`
-      },
-      async hemeraReq => {
-        reply.sendSSE(transformStream, {
-          data: hemeraReq.data.message,
-          id: hemeraReq.data.sequence,
-          event: req.params.subject
-        })
-      }
-    )
   }
 })
 
@@ -111,29 +98,8 @@ fastify.decorateReply('sendSSE', function(stream, msg) {
   }
 })
 
-fastify.decorateReply('sse', function(stream) {
-  this.code(200)
-    .type('text/event-stream;charset=UTF-8')
-    .header('Access-Control-Allow-Origin', '*')
-    .header('content-encoding', 'identity')
-    .header('Cache-Control', 'no-cache')
-    .header('Connection', 'keep-alive')
-    .send(stream)
-})
-
 async function start() {
   await fastify.listen(3000)
-  // send dummy events
-  setInterval(() => {
-    fastify.hemera.act({
-      topic: 'natss',
-      cmd: 'publish',
-      subject: 'news',
-      data: {
-        title: 'hello world'
-      }
-    })
-  }, 1000)
 }
 
 start()
