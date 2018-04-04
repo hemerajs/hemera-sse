@@ -5,14 +5,14 @@ const through = require('through2')
 const stringify = require('json-stringify-safe')
 const EOL = require('os').EOL
 
+const clientId = 'clientTest'
 fastify.register(require('fastify-hemera'), {
   plugins: [
-    require('hemera-joi'),
     {
       plugin: require('hemera-nats-streaming'),
       options: {
         clusterId: 'test-cluster',
-        clientId: 'clientTest',
+        clientId,
         opts: {}
       }
     }
@@ -30,9 +30,7 @@ fastify.route({
       pattern: { type: 'string' }
     }
   },
-  handler: (req, reply) => {
-    reply.header('Access-Control-Allow-Origin', '*')
-
+  handler: async (req, reply) => {
     const lastEventId = parseInt(req.getLastEventId())
     if (lastEventId) {
       req.log.info(req.getLastEventId(), 'Last event id')
@@ -41,34 +39,25 @@ fastify.route({
     const transformStream = reply.createSSEStream()
     reply.sse(transformStream)
 
-    req.hemera.act(
+    await req.hemera.act({
+      topic: 'natss',
+      cmd: 'subscribe',
+      subject: req.params.subject,
+      options: {
+        startAtSequence: lastEventId
+      }
+    })
+
+    req.hemera.add(
       {
-        topic: 'nats-streaming',
-        cmd: 'subscribe',
-        subject: req.params.subject,
-        queue: 'sse',
-        options: {
-          setStartAtSequence: lastEventId
-        }
+        topic: `natss.${req.params.subject}`
       },
-      (err, resp) => {
-        if (err) {
-          req.log.error(err)
-        } else {
-          req.hemera.add(
-            {
-              topic: `nats-streaming.${req.params.subject}`
-            },
-            (hemeraReq, cb) => {
-              reply.sendSSE(transformStream, {
-                data: hemeraReq.data.message,
-                id: hemeraReq.data.sequence,
-                event: req.params.subject
-              })
-              cb()
-            }
-          )
-        }
+      async hemeraReq => {
+        reply.sendSSE(transformStream, {
+          data: hemeraReq.data.message,
+          id: hemeraReq.data.sequence,
+          event: req.params.subject
+        })
       }
     )
   }
@@ -123,13 +112,9 @@ fastify.decorateReply('sendSSE', function(stream, msg) {
 })
 
 fastify.decorateReply('sse', function(stream) {
-  // keep client connection open
-  this.request.req.socket.setTimeout(0)
-  this.request.req.socket.setNoDelay(true)
-  this.request.req.socket.setKeepAlive(true)
-
   this.code(200)
     .type('text/event-stream;charset=UTF-8')
+    .header('Access-Control-Allow-Origin', '*')
     .header('content-encoding', 'identity')
     .header('Cache-Control', 'no-cache')
     .header('Connection', 'keep-alive')
@@ -138,16 +123,17 @@ fastify.decorateReply('sse', function(stream) {
 
 async function start() {
   await fastify.listen(3000)
+  // send dummy events
   setInterval(() => {
     fastify.hemera.act({
-      topic: 'nats-streaming',
+      topic: 'natss',
       cmd: 'publish',
       subject: 'news',
       data: {
         title: 'hello world'
       }
     })
-  }, 2000)
+  }, 1000)
 }
 
 start()
